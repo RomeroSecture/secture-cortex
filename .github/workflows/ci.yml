@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: cortex
+          POSTGRES_USER: cortex
+          POSTGRES_PASSWORD: cortex_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cortex -d cortex"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -e ".[dev]" email-validator
+
+      - name: Lint with ruff
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: backend/app backend/tests
+          args: check
+
+      - name: Run Alembic migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://cortex:cortex_dev@localhost:5432/cortex
+        run: alembic upgrade head
+
+      - name: Run pytest
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://cortex:cortex_dev@localhost:5432/cortex
+        run: python -m pytest tests/ -v
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint with eslint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run vitest
+        working-directory: frontend
+        run: npx vitest run
+
+      - name: Build
+        working-directory: frontend
+        run: npx next build
