@@ -19,6 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create context_chunks table with HNSW index."""
+    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
     op.create_table(
         "context_chunks",
         sa.Column(
