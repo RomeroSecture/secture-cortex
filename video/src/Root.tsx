@@ -9,10 +9,10 @@ export const Root: React.FC = () => {
       <Composition
         id="ProductVideo"
         component={ProductVideo}
-        durationInFrames={900}
+        durationInFrames={1400}
         fps={30}
-        width={1080}
-        height={1920}
+        width={1920}
+        height={1080}
         schema={productVideoSchema}
         defaultProps={{
           hookText: "¿Cuántas veces has dicho 'déjame mirarlo y te digo'?",
