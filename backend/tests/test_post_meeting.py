@@ -134,17 +134,17 @@ async def test_generate_post_meeting_returns_outputs() -> None:
     mock_db.add = MagicMock()
     mock_db.commit = AsyncMock()
 
-    # Mock all LLM calls to return valid outputs
-    mock_minutes = MinutesOutput(
-        summary="Test meeting",
-        attendees=["Speaker 0"],
-    )
+    # Mock all LLM calls to return valid JSON
+    import json
 
-    mock_model = MagicMock()
-    mock_structured = AsyncMock(return_value=mock_minutes)
-    mock_model.with_structured_output.return_value = MagicMock(
-        ainvoke=mock_structured,
-    )
+    mock_response = MagicMock()
+    mock_response.content = json.dumps({
+        "summary": "Test meeting",
+        "attendees": ["Speaker 0"],
+    })
+
+    mock_model = AsyncMock()
+    mock_model.ainvoke = AsyncMock(return_value=mock_response)
 
     with patch(
         "app.services.agents.post_meeting._get_model",
@@ -180,6 +180,8 @@ async def test_generate_post_meeting_handles_partial_failure() -> None:
     mock_db.add = MagicMock()
     mock_db.commit = AsyncMock()
 
+    import json
+
     call_count = 0
 
     async def mock_invoke(*args, **kwargs):
@@ -187,12 +189,12 @@ async def test_generate_post_meeting_handles_partial_failure() -> None:
         call_count += 1
         if call_count == 2:
             raise RuntimeError("LLM error on 2nd call")
-        return MinutesOutput(summary="ok")
+        resp = MagicMock()
+        resp.content = json.dumps({"summary": "ok"})
+        return resp
 
     mock_model = MagicMock()
-    mock_model.with_structured_output.return_value = MagicMock(
-        ainvoke=mock_invoke,
-    )
+    mock_model.ainvoke = mock_invoke
 
     with patch(
         "app.services.agents.post_meeting._get_model",

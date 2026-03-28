@@ -48,9 +48,9 @@ class ProjectDetailResponse(BaseModel):
 
 
 class MemberAdd(BaseModel):
-    """Request schema for adding a member to a project."""
+    """Request schema for adding a member to a project by email."""
 
-    user_id: uuid.UUID
+    email: str = Field(description="Email of the user to add")
     role: str = Field(pattern=r"^(admin|tech_lead|developer|pm|commercial)$")
 
 

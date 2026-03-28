@@ -46,7 +46,21 @@ CONVERSATION_INTEL_PROMPT = (
     "- Set fields to null if not detected in this chunk.\n"
     "- Be precise — only flag genuine detections.\n"
     "- Match the transcription language (usually Spanish).\n"
-    "- Keep all text concise."
+    "- Keep all text concise.\n"
+    "\n"
+    "Respond ONLY with this JSON structure:\n"
+    "{\n"
+    '  "decision": {"description": "...", "speaker": "...", '
+    '"context": "..."} or null,\n'
+    '  "action_item": {"task": "...", "owner": "...", '
+    '"deadline": "..."} or null,\n'
+    '  "question": {"question": "...", "speaker": "..."} or null,\n'
+    '  "topic_label": "1-3 words",\n'
+    '  "sentiment": {"topic": "...", "sentiment": '
+    '"positive|neutral|negative", "score": -1.0 to 1.0} or null,\n'
+    '  "momentum_keyword": "" or keyword,\n'
+    '  "jargon_detected": "" or "term: explanation"\n'
+    "}"
 )
 
 
@@ -58,6 +72,7 @@ def _get_conversation_model() -> ChatOpenAI:
         model=settings.conversation_model,
         temperature=0.1,
         max_tokens=512,
+        model_kwargs={"response_format": {"type": "json_object"}},
     )
 
 
@@ -153,26 +168,31 @@ def _intel_to_insights(
 async def conversation_intel_node(
     state: PipelineState,
 ) -> dict:
-    """Detect conversation patterns via single structured-output call.
+    """Detect conversation patterns via single JSON call.
 
     Uses the fast model for low latency. Runs on every chunk.
+    Manual JSON parse + Pydantic validation (Groq doesn't support json_schema).
     """
     chunk = state["transcription_chunk"]
 
     try:
-        model = _get_conversation_model().with_structured_output(
-            ConversationIntelOutput,
-        )
-        intel: ConversationIntelOutput = await model.ainvoke([
+        model = _get_conversation_model()
+        response = await model.ainvoke([
             {"role": "system", "content": CONVERSATION_INTEL_PROMPT},
             {
                 "role": "user",
                 "content": (
                     f"## Transcription Chunk\n{chunk}\n\n"
-                    "Analyze for conversation patterns."
+                    "Analyze for conversation patterns. "
+                    "Respond ONLY with JSON."
                 ),
             },
         ])
+
+        import json
+
+        raw = json.loads(response.content)
+        intel = ConversationIntelOutput.model_validate(raw)
 
         insights = _intel_to_insights(intel)
         logger.info(

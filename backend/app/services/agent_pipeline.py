@@ -1,7 +1,7 @@
 """LangGraph StateGraph multi-agent pipeline — replaces monolithic RAG when enabled.
 
 Architecture: START → supervisor → [parallel agents] → synthesizer → END
-Uses AsyncPostgresSaver for meeting-level state persistence with graceful fallback.
+Stateless per invocation — no checkpointer needed.
 """
 
 import asyncio
@@ -10,7 +10,6 @@ import uuid
 import structlog
 from langgraph.graph import END, START, StateGraph
 
-from app.config import settings
 from app.schemas.agent import AgentInsight, PipelineState
 from app.services.agents.commercial import commercial_node
 from app.services.agents.conversation import conversation_intel_node
@@ -98,39 +97,22 @@ def build_pipeline() -> StateGraph:
 
 # Compiled pipeline (lazy singleton)
 _compiled_pipeline = None
-_checkpointer = None
 
 
-async def _get_checkpointer():
-    """Get AsyncPostgresSaver instance, or None if unavailable."""
-    global _checkpointer
-    if _checkpointer is not None:
-        return _checkpointer
+def get_pipeline():
+    """Get the compiled pipeline (stateless — no checkpointer).
 
-    try:
-        from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
-
-        # Derive psycopg connection string from asyncpg one
-        db_url = settings.database_url.replace("+asyncpg", "")
-        _checkpointer = AsyncPostgresSaver.from_conn_string(db_url)
-        await _checkpointer.setup()
-        logger.info("checkpointer_initialized", backend="AsyncPostgresSaver")
-        return _checkpointer
-    except Exception:
-        logger.warning("checkpointer_unavailable_running_stateless")
-        return None
-
-
-async def get_pipeline():
-    """Get the compiled pipeline with optional checkpointer."""
+    Each invocation is independent: per-chunk state doesn't persist
+    in LangGraph. Cross-chunk memory (previous_insights, decisions)
+    is managed by rag.py's buffer system.
+    """
     global _compiled_pipeline
     if _compiled_pipeline is not None:
         return _compiled_pipeline
 
     graph = build_pipeline()
-    checkpointer = await _get_checkpointer()
-    _compiled_pipeline = graph.compile(checkpointer=checkpointer)
-    logger.info("pipeline_compiled", has_checkpointer=checkpointer is not None)
+    _compiled_pipeline = graph.compile()
+    logger.info("pipeline_compiled")
     return _compiled_pipeline
 
 
@@ -147,7 +129,7 @@ async def run_pipeline(
 
     Returns a list of filtered AgentInsight objects ready for delivery.
     """
-    pipeline = await get_pipeline()
+    pipeline = get_pipeline()
 
     initial_state: PipelineState = {
         "transcription_chunk": transcription_chunk,
@@ -162,11 +144,8 @@ async def run_pipeline(
         "previous_insights": previous_insights or [],
     }
 
-    # Use meeting_id as thread_id for state isolation per meeting
-    config = {"configurable": {"thread_id": str(meeting_id)}}
-
     try:
-        result = await pipeline.ainvoke(initial_state, config=config)
+        result = await pipeline.ainvoke(initial_state)
         insights = result.get("agent_insights", [])
         logger.info(
             "pipeline_completed",

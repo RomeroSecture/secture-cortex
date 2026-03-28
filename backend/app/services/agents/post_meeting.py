@@ -106,6 +106,7 @@ def _get_model(model_name: str) -> ChatOpenAI:
         model=model_name,
         temperature=0.3,
         max_tokens=4096,
+        model_kwargs={"response_format": {"type": "json_object"}},
     )
 
 
@@ -163,13 +164,22 @@ async def generate_post_meeting_outputs(
 
     for output_type, schema_cls, model_name, system_prompt in OUTPUT_CONFIGS:
         try:
-            model = _get_model(model_name).with_structured_output(
-                schema_cls,
-            )
-            result = await model.ainvoke([
+            model = _get_model(model_name)
+            response = await model.ainvoke([
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": context},
+                {
+                    "role": "user",
+                    "content": (
+                        f"{context}\n\n"
+                        "Respond ONLY with JSON."
+                    ),
+                },
             ])
+
+            import json as _json
+
+            raw = _json.loads(response.content)
+            result = schema_cls.model_validate(raw)
 
             output = MeetingOutput(
                 meeting_id=meeting_id,

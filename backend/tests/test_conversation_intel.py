@@ -161,23 +161,25 @@ def test_intel_to_insights_empty() -> None:
 @pytest.mark.asyncio
 async def test_conversation_node_invocation() -> None:
     """Conversation node invokes LLM and returns insights."""
-    mock_intel = ConversationIntelOutput(
-        decision=DetectedDecision(
-            description="Lanzar v2 en marzo",
-            speaker="PM",
-        ),
-        topic_label="release",
-        sentiment=SentimentDetection(
-            sentiment="positive",
-            score=0.7,
-        ),
-    )
+    import json
 
-    mock_model = MagicMock()
-    mock_structured = AsyncMock(return_value=mock_intel)
-    mock_model.with_structured_output.return_value = MagicMock(
-        ainvoke=mock_structured,
-    )
+    mock_response = MagicMock()
+    mock_response.content = json.dumps({
+        "decision": {
+            "description": "Lanzar v2 en marzo",
+            "speaker": "PM",
+            "context": "",
+        },
+        "topic_label": "release",
+        "sentiment": {
+            "topic": "release",
+            "sentiment": "positive",
+            "score": 0.7,
+        },
+    })
+
+    mock_model = AsyncMock()
+    mock_model.ainvoke = AsyncMock(return_value=mock_response)
 
     with patch(
         "app.services.agents.conversation._get_conversation_model",

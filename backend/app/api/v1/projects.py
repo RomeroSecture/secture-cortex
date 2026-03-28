@@ -20,7 +20,7 @@ from app.repositories.project import (
     get_projects_for_user,
     get_user_project_role,
 )
-from app.repositories.user import get_user_by_id
+from app.repositories.user import get_user_by_email
 from app.schemas.project import (
     MemberAdd,
     MemberListResponse,
@@ -144,22 +144,29 @@ async def assign_member(
     project = await get_project_by_id(db, project_id)
     if project is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    target_user = await get_user_by_id(db, payload.user_id)
+    target_user = await get_user_by_email(db, payload.email)
     if target_user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    existing_role = await get_user_project_role(db, project_id, payload.user_id)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No user found with email '{payload.email}'",
+        )
+    existing_role = await get_user_project_role(db, project_id, target_user.id)
     if existing_role is not None:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="User already a member"
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User already a member",
         )
     await add_project_member(
-        db, project_id=project_id, user_id=payload.user_id, role=ProjectRole(payload.role)
+        db,
+        project_id=project_id,
+        user_id=target_user.id,
+        role=ProjectRole(payload.role),
     )
     await db.commit()
     logger.info(
         "member_assigned",
         project_id=str(project_id),
-        user_id=str(payload.user_id),
+        email=payload.email,
         role=payload.role,
     )
     members = await get_project_members(db, project_id)

@@ -263,17 +263,17 @@ async def test_synthesizer_no_insights_returns_empty() -> None:
 @pytest.mark.asyncio
 async def test_supervisor_routes_technical_chunk() -> None:
     """Supervisor activates tech_lead for technical discussion."""
-    mock_decision = SupervisorDecision(
-        active_agents=["tech_lead", "dev"],
-        reasoning="Technical topic about module dependencies",
-        topic_classification="technical",
-    )
+    import json
 
-    mock_model = MagicMock()
-    mock_structured = AsyncMock(return_value=mock_decision)
-    mock_model.with_structured_output.return_value = MagicMock(
-        ainvoke=mock_structured,
-    )
+    mock_response = MagicMock()
+    mock_response.content = json.dumps({
+        "active_agents": ["tech_lead", "dev"],
+        "topic_classification": "technical",
+        "reasoning": "Technical topic about module dependencies",
+    })
+
+    mock_model = AsyncMock()
+    mock_model.ainvoke = AsyncMock(return_value=mock_response)
 
     with patch(
         "app.services.agents.supervisor._get_supervisor_model",
