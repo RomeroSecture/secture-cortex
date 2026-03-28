@@ -139,6 +139,7 @@ async def run_pipeline(
         "connected_roles": connected_roles or [],
         "active_agents": [],
         "agent_insights": [],
+        "final_insights": [],
         "iteration_count": 0,
         "feedback_context": feedback_context,
         "previous_insights": previous_insights or [],
@@ -146,7 +147,7 @@ async def run_pipeline(
 
     try:
         result = await pipeline.ainvoke(initial_state)
-        insights = result.get("agent_insights", [])
+        insights = result.get("final_insights", [])
         logger.info(
             "pipeline_completed",
             meeting_id=str(meeting_id),

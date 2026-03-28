@@ -196,6 +196,7 @@ async def test_conversation_node_invocation() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await conversation_intel_node(state)
 
@@ -222,6 +223,7 @@ async def test_conversation_node_graceful_failure() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await conversation_intel_node(state)
 

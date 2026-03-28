@@ -1,7 +1,8 @@
 """Deepgram real-time transcription — async websockets (no SDK).
 
-Direct async WebSocket connection to Deepgram Nova-3.
-Bypasses the sync SDK which conflicts with FastAPI's async event loop.
+Two independent Deepgram sessions: one for mic, one for tab audio.
+Each produces its own transcription with a fixed speaker label.
+No interleaving, no multichannel complexity.
 """
 
 import asyncio
@@ -26,10 +27,15 @@ BASE_BACKOFF_S = 1.0
 DEEPGRAM_WS_URL = "wss://api.deepgram.com/v1/listen"
 
 
-class DeepgramSession:
-    """Async Deepgram live transcription session with auto-reconnect."""
+class SingleChannelSession:
+    """One Deepgram WS connection for a single audio channel."""
 
-    def __init__(self, on_transcription: TranscriptionCallback) -> None:
+    def __init__(
+        self,
+        speaker_label: str,
+        on_transcription: TranscriptionCallback,
+    ) -> None:
+        self._speaker = speaker_label
         self._on_transcription = on_transcription
         self._ws: Any = None
         self._retries = 0
@@ -37,83 +43,74 @@ class DeepgramSession:
         self._listen_task: asyncio.Task | None = None
 
     async def start(self) -> bool:
-        """Open the Deepgram WebSocket connection."""
+        """Open connection to Deepgram."""
         if not settings.deepgram_api_key:
-            logger.warning("deepgram_api_key_not_set")
             return False
         self._stopped = False
         return await self._connect()
 
     async def _connect(self) -> bool:
-        """Establish async WebSocket connection to Deepgram."""
         try:
             params = {
                 "model": "nova-3",
                 "language": "multi",
                 "encoding": "linear16",
-                "sample_rate": "48000",  # Browser AudioContext default
+                "sample_rate": "48000",
                 "channels": "1",
-                "diarize": "true",
-                "interim_results": "true",
                 "smart_format": "true",
                 "punctuate": "true",
+                "interim_results": "true",
+                "endpointing": "400",
+                "utterance_end_ms": "1500",
+                "vad_events": "true",
             }
             url = f"{DEEPGRAM_WS_URL}?{urllib.parse.urlencode(params)}"
-            headers = {"Authorization": f"Token {settings.deepgram_api_key}"}
-
-            self._ws = await websockets.connect(url, additional_headers=headers)
+            headers = {
+                "Authorization": f"Token {settings.deepgram_api_key}",
+            }
+            self._ws = await websockets.connect(
+                url, additional_headers=headers,
+            )
             self._retries = 0
-            logger.info("deepgram_connected")
-
-            # Start listening for transcription results in background
-            self._listen_task = asyncio.create_task(self._listen_loop())
+            logger.info(
+                "deepgram_channel_connected",
+                speaker=self._speaker,
+            )
+            self._listen_task = asyncio.create_task(self._listen())
             return True
-
         except Exception:
-            logger.exception("deepgram_connect_failed")
+            logger.exception("deepgram_connect_failed",
+                             speaker=self._speaker)
             return False
 
-    async def _listen_loop(self) -> None:
-        """Receive transcription results from Deepgram and forward via callback."""
+    async def _listen(self) -> None:
         try:
             async for raw_msg in self._ws:
                 if self._stopped:
                     break
                 try:
                     msg = json.loads(raw_msg)
-                    msg_type = msg.get("type", "")
-
-                    if msg_type != "Results":
+                    if msg.get("type") != "Results":
                         continue
 
-                    channel = msg.get("channel", {})
-                    alternatives = channel.get("alternatives", [])
-                    if not alternatives:
-                        continue
-
-                    transcript = alternatives[0].get("transcript", "")
+                    alt = msg.get("channel", {}).get(
+                        "alternatives", [{}],
+                    )
+                    transcript = alt[0].get("transcript", "")
                     if not transcript.strip():
                         continue
 
                     is_final = msg.get("is_final", False)
                     speech_final = msg.get("speech_final", False)
 
-                    # Extract speaker from words
-                    words = alternatives[0].get("words", [])
-                    speaker = "Speaker"
-                    if words and "speaker" in words[0]:
-                        speaker = f"Speaker {words[0]['speaker']}"
-
-                    payload = {
+                    await self._on_transcription({
                         "type": "transcription",
                         "payload": {
-                            "speaker": speaker,
+                            "speaker": self._speaker,
                             "text": transcript,
                             "is_final": is_final or speech_final,
                         },
-                    }
-                    await self._on_transcription(payload)
-
+                    })
                 except json.JSONDecodeError:
                     continue
                 except Exception:
@@ -121,7 +118,10 @@ class DeepgramSession:
 
         except websockets.exceptions.ConnectionClosed:
             if not self._stopped:
-                logger.warning("deepgram_connection_lost")
+                logger.warning(
+                    "deepgram_connection_lost",
+                    speaker=self._speaker,
+                )
                 await self._reconnect()
         except Exception:
             if not self._stopped:
@@ -129,39 +129,81 @@ class DeepgramSession:
                 await self._reconnect()
 
     async def _reconnect(self) -> None:
-        """Reconnect with exponential backoff."""
         if self._stopped or self._retries >= MAX_RETRIES:
-            logger.error("deepgram_max_retries", retries=self._retries)
             return
         self._retries += 1
         delay = min(BASE_BACKOFF_S * (2 ** (self._retries - 1)), 30.0)
-        logger.warning("deepgram_reconnecting", retry=self._retries, delay=delay)
+        logger.warning(
+            "deepgram_reconnecting",
+            speaker=self._speaker,
+            retry=self._retries,
+            delay=delay,
+        )
         await asyncio.sleep(delay)
         await self._connect()
 
-    def send_audio(self, audio_bytes: bytes) -> None:
-        """Send raw PCM audio bytes to Deepgram."""
-        if self._ws and not self._stopped:
-            try:
-                asyncio.get_running_loop().create_task(self._ws.send(audio_bytes))
-            except Exception:
-                logger.exception("deepgram_send_failed")
-
     def send_audio_base64(self, audio_b64: str) -> None:
-        """Decode base64 audio and send to Deepgram."""
+        """Decode base64 and send to Deepgram."""
+        if not self._ws or self._stopped:
+            return
         try:
             audio_bytes = base64.b64decode(audio_b64)
-            self.send_audio(audio_bytes)
+            asyncio.get_running_loop().create_task(
+                self._ws.send(audio_bytes),
+            )
         except Exception:
-            logger.exception("deepgram_decode_failed")
+            pass
 
     async def stop(self) -> None:
-        """Close the Deepgram connection."""
         self._stopped = True
         if self._listen_task:
             self._listen_task.cancel()
         if self._ws:
             with contextlib.suppress(Exception):
                 await self._ws.close()
-            logger.info("deepgram_stopped")
         self._ws = None
+
+
+class DeepgramSession:
+    """Manages one or two Deepgram channels (mic + optional tab)."""
+
+    def __init__(
+        self, on_transcription: TranscriptionCallback,
+    ) -> None:
+        self._on_transcription = on_transcription
+        self._mic: SingleChannelSession | None = None
+        self._tab: SingleChannelSession | None = None
+
+    async def start(self, **_kwargs: Any) -> bool:
+        """Start mic channel. Tab channel starts on first tab audio."""
+        self._mic = SingleChannelSession(
+            "Speaker 0", self._on_transcription,
+        )
+        return await self._mic.start()
+
+    async def ensure_tab_channel(self) -> None:
+        """Lazily start tab channel on first tab audio chunk."""
+        if self._tab is not None:
+            return
+        self._tab = SingleChannelSession(
+            "Speaker 1", self._on_transcription,
+        )
+        started = await self._tab.start()
+        if not started:
+            self._tab = None
+
+    def send_audio_base64(
+        self, audio_b64: str, channel: int = 0,
+    ) -> None:
+        """Route audio to the correct Deepgram channel."""
+        if channel == 1 and self._tab:
+            self._tab.send_audio_base64(audio_b64)
+        elif self._mic:
+            self._mic.send_audio_base64(audio_b64)
+
+    async def stop(self) -> None:
+        if self._mic:
+            await self._mic.stop()
+        if self._tab:
+            await self._tab.stop()
+        logger.info("deepgram_stopped")

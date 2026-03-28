@@ -149,13 +149,13 @@ export default function MeetingDashboard({
     }
   }, []);
 
-  // Build WS URL — only include project_id if present
-  const wsParams = new URLSearchParams();
-  if (token) wsParams.set("token", token);
-  if (projectId) wsParams.set("project_id", projectId);
+  // Build WS URL — wait until token AND projectId are available
+  const wsFullUrl = token && projectId
+    ? wsUrl(`/ws/meeting/${meetingId}?token=${token}&project_id=${projectId}`)
+    : "";
 
   const { isConnected, send } = useWebSocket({
-    url: wsUrl(`/ws/meeting/${meetingId}?${wsParams.toString()}`),
+    url: wsFullUrl,
     onMessage: handleWsMessage,
   });
 

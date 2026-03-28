@@ -27,7 +27,7 @@ export const Scene6CTA: React.FC<Scene6CTAProps> = ({ ctaText, ctaUrl }) => {
         {/* Logo */}
         <div style={{
           opacity: interpolate(frame, [5, 25], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
-          transform: `scale(${spring({ frame: frame - 8, fps, config: { damping: 15, stiffness: 120 } })})`,
+          transform: `scale(${interpolate(frame, [8, 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) })})`,
         }}>
           <Img src={staticFile("cortex-logo.png")} style={{ width: 160, height: 160, borderRadius: 40 }} />
         </div>

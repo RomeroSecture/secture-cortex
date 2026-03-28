@@ -3,7 +3,7 @@
 **Proyecto**: MiTienda — Plataforma E-Commerce para RetailMax S.L.
 **Versión**: 2.1.0 (Fase 2)
 **Fecha**: Marzo 2026
-**Autor**: Laura García, Tech Lead — Secture
+**Autor**: Gonzalo López, Tech Lead — Secture
 
 ---
 

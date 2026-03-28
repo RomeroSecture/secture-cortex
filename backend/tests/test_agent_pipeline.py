@@ -86,6 +86,7 @@ def test_pipeline_state_structure() -> None:
         "iteration_count": 0,
         "feedback_context": "",
         "previous_insights": [],
+            "final_insights": [],
     }
     assert state["transcription_chunk"] == "test"
 
@@ -167,10 +168,11 @@ async def test_synthesizer_filters_low_confidence() -> None:
         "iteration_count": 0,
         "feedback_context": "",
         "previous_insights": [],
+            "final_insights": [],
     }
 
     result = await synthesizer_node(state)
-    filtered = result["agent_insights"]
+    filtered = result["final_insights"]
     # 0.3 < 0.85 (commercial threshold) → filtered out
     # 0.9 >= 0.85 → passes
     assert len(filtered) == 1
@@ -209,7 +211,7 @@ async def test_synthesizer_deduplicates() -> None:
     }
 
     result = await synthesizer_node(state)
-    filtered = result["agent_insights"]
+    filtered = result["final_insights"]
     assert len(filtered) == 1
     assert filtered[0].summary == "New unique insight"
 
@@ -228,10 +230,11 @@ async def test_synthesizer_empty_context_generates_hint() -> None:
         "iteration_count": 0,
         "feedback_context": "",
         "previous_insights": [],
+            "final_insights": [],
     }
 
     result = await synthesizer_node(state)
-    filtered = result["agent_insights"]
+    filtered = result["final_insights"]
     assert len(filtered) == 1
     assert filtered[0].subtype == "insufficient_context"
     assert filtered[0].agent_source == "supervisor"
@@ -251,10 +254,11 @@ async def test_synthesizer_no_insights_returns_empty() -> None:
         "iteration_count": 0,
         "feedback_context": "",
         "previous_insights": [],
+            "final_insights": [],
     }
 
     result = await synthesizer_node(state)
-    assert result["agent_insights"] == []
+    assert result["final_insights"] == []
 
 
 # ─── Supervisor tests ──────────────────────────────────────────
@@ -292,6 +296,7 @@ async def test_supervisor_routes_technical_chunk() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
 
         result = await supervisor_node(state)
@@ -320,6 +325,7 @@ async def test_supervisor_fallback_on_error() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
 
         result = await supervisor_node(state)
@@ -362,6 +368,7 @@ async def test_agent_node_graceful_failure() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
 
         result = await tech_lead_node(state)
@@ -409,6 +416,7 @@ async def test_agent_node_parses_valid_response() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
 
         result = await dev_node(state)
@@ -574,10 +582,11 @@ async def test_synthesizer_generates_compound_on_conflict() -> None:
         "iteration_count": 0,
         "feedback_context": "",
         "previous_insights": [],
+            "final_insights": [],
     }
 
     result = await synthesizer_node(state)
-    filtered = result["agent_insights"]
+    filtered = result["final_insights"]
     # Should have original 2 + 1 compound = 3
     subtypes = [i.subtype for i in filtered]
     assert "synthesis_conflict" in subtypes

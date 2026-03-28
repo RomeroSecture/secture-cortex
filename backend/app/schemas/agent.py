@@ -84,6 +84,9 @@ class PipelineState(TypedDict):
     # Accumulated by agents (reducer: merge lists)
     agent_insights: Annotated[list[AgentInsight], operator.add]
 
+    # Final filtered insights (set by synthesizer, no reducer)
+    final_insights: list[AgentInsight]
+
     # Meeting-level iteration tracking
     iteration_count: int
 

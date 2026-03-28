@@ -7,7 +7,7 @@ export const Scene3Enter: React.FC = () => {
   const { fps } = useVideoConfig();
 
   const plotTwistOpacity = interpolate(frame, [40, 55], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const logoScale = spring({ frame: frame - 55, fps, config: { damping: 14, stiffness: 120 } });
+  const logoScale = interpolate(frame, [55, 80], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
   const nameOpacity = interpolate(frame, [75, 100], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (

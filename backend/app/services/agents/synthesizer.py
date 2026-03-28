@@ -135,9 +135,9 @@ async def synthesizer_node(state: PipelineState) -> dict:
                 target_roles=["admin", "tech_lead"],
             )
             logger.info("synthesizer_insufficient_context")
-            return {"agent_insights": [hint]}
+            return {"final_insights": [hint]}
         logger.info("synthesizer_no_insights")
-        return {"agent_insights": []}
+        return {"final_insights": []}
 
     # Step 1: Deduplicate against previous insights
     deduped: list[AgentInsight] = [
@@ -190,4 +190,4 @@ async def synthesizer_node(state: PipelineState) -> dict:
         filtered=len(filtered),
     )
 
-    return {"agent_insights": filtered}
+    return {"final_insights": filtered}

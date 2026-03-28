@@ -236,6 +236,7 @@ async def test_tech_lead_node_graceful_failure_with_tools() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await tech_lead_node(state)
 
@@ -262,6 +263,7 @@ async def test_dev_node_graceful_failure_with_tools() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await dev_node(state)
 
@@ -304,6 +306,7 @@ async def test_tech_lead_full_invocation_mocked() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await tech_lead_node(state)
 
@@ -350,6 +353,7 @@ async def test_dev_full_invocation_mocked() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await dev_node(state)
 
@@ -538,6 +542,7 @@ async def test_pm_node_full_invocation() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await pm_node(state)
 
@@ -584,6 +589,7 @@ async def test_commercial_node_full_invocation() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await commercial_node(state)
 
@@ -614,6 +620,7 @@ async def test_pm_node_graceful_failure() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await pm_node(state)
 
@@ -640,6 +647,7 @@ async def test_commercial_node_graceful_failure() -> None:
             "iteration_count": 0,
             "feedback_context": "",
             "previous_insights": [],
+            "final_insights": [],
         }
         result = await commercial_node(state)
 

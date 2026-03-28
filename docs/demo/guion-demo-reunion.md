@@ -8,10 +8,10 @@
 ## Setup Previo
 
 ### Participantes
-| Persona real | Personaje simulado | Rol |
-|---|---|---|
-| **Gonzalo** | Carlos Mendoza | PM de RetailMax (el cliente) |
-| **Antonio** | Laura García | Tech Lead de Secture (la consultora) |
+| Persona | Rol |
+|---|---|
+| **Antonio** | PM de RetailMax (el cliente) |
+| **Gonzalo** | Tech Lead de Secture (la consultora) |
 
 ### Contexto de la reunión
 Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce). Estamos en marzo 2026, en medio de la Fase 2 del proyecto. El cliente tiene varias preocupaciones y peticiones nuevas.
@@ -40,16 +40,16 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Warm-up. El sistema empieza a buffear transcripción. Establecer contexto.
 
-**Carlos** (Gonzalo):
-> "Buenos días Laura. Bueno, estamos ya en marzo y quería repasar cómo vamos con la Fase 2. ¿Cómo estamos con el dashboard de analytics que quedamos en entregar?"
+**Gonzalo**:
+> "Buenos días Antonio. Te cuento, el dashboard de analytics ya tiene los reportes básicos de ventas y tráfico funcionando. Estamos ahora cerrando la personalización de ofertas. Vamos bien de tiempos."
 
-**Laura** (Antonio):
-> "Buenos días Carlos. El dashboard está avanzando bien, ya tenemos los reportes básicos de ventas y tráfico funcionando. Estamos ahora con la parte de personalización de ofertas."
+**Antonio**:
+> "Vale, bien. Pero necesito ver números concretos pronto, porque internamente me están presionando con los resultados de Fase 2. ¿Vamos a llegar a todo lo que quedamos?"
 
 **Qué debería pasar en Cortex**:
 - La transcripción aparece en tiempo real en el panel izquierdo
-- El conversation agent detecta el topic: "analytics, fase 2"
-- Posible insight de contexto: referencia al compromiso de Laura (15 Feb) del acta de enero
+- El conversation agent detecta el topic: "analytics, fase 2, presión interna"
+- Posible insight de contexto: referencia al compromiso de Gonzalo (15 Feb) del acta de enero
 
 ---
 
@@ -57,11 +57,11 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Disparar ALERT + SCOPE. El cliente pide algo que está frozen.
 
-**Carlos** (Gonzalo):
-> "Mira, hay algo que necesitamos con urgencia. Los usuarios no abren los emails de confirmación de pedido. Las tasas de apertura son bajísimas, como un 15%. Necesitamos cambiar las notificaciones a push notifications, tanto en web como en el móvil."
+**Antonio**:
+> "Mira Gonzalo, hay algo urgente. Los usuarios no abren los emails de confirmación de pedido, estamos en un 15% de apertura. Eso es ridículo. Necesitamos push notifications ya, tanto en web como en el móvil."
 
-**Laura** (Antonio):
-> "Entiendo la necesidad Carlos, las tasas de apertura de email son efectivamente bajas en e-commerce. Es un problema bastante común..."
+**Gonzalo**:
+> "Sí, es un problema real. Las tasas de apertura de email en e-commerce están cayendo en toda la industria. Déjame explicarte dónde estamos con el módulo de notificaciones porque hay contexto técnico importante..."
 
 *(Pausa 5-10 segundos para que Cortex procese)*
 
@@ -80,11 +80,11 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Disparar SCOPE (exclusión contractual) + COMMERCIAL (oportunidad).
 
-**Carlos** (Gonzalo):
-> "Y ya que hablamos de móvil, nuestra competencia ya tiene app nativa. Necesitamos una app para iOS y Android, como mínimo para el tercer trimestre de este año."
+**Antonio**:
+> "Y ya que hablamos de móvil... nuestra competencia, ShopExpress, ya tiene app nativa. Estamos perdiendo clientes por esto. Necesitamos una app para iOS y Android como mínimo para el tercer trimestre."
 
-**Laura** (Antonio):
-> "Sí, es un tema que tenemos en el roadmap para más adelante..."
+**Gonzalo**:
+> "Es un tema que tenemos identificado en el roadmap. Lo que pasa es que hay que tener en cuenta el alcance contractual actual para definir bien cómo lo abordamos..."
 
 *(Pausa 5-10 segundos)*
 
@@ -103,11 +103,11 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Disparar ALERT de tech debt conocida. Problema real que el sistema ya tiene documentado.
 
-**Carlos** (Gonzalo):
-> "Otra cosa que me preocupa bastante. Esta semana tuvimos varios reportes de clientes a los que les falló el pago. Algunos dicen que les cobró pero no les confirmó el pedido. Eso es inaceptable."
+**Antonio**:
+> "Otra cosa que me preocupa mucho. Esta semana tuvimos varios reportes de clientes a los que les falló el pago. Algunos dicen que les cobró pero no les confirmó el pedido. Eso no puede pasar, Gonzalo."
 
-**Laura** (Antonio):
-> "¿Cuántos casos detectaron? Eso es algo que tenemos en el radar..."
+**Gonzalo**:
+> "¿Cuántos casos habéis detectado exactamente? Es algo que tenemos identificado en el backlog técnico, déjame darte contexto..."
 
 *(Pausa 5-10 segundos)*
 
@@ -126,11 +126,11 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Disparar ALERT de seguridad + COMMERCIAL (servicios de Secture).
 
-**Carlos** (Gonzalo):
-> "Con todo lo que está pasando últimamente con los hackeos y las multas por datos, ¿cómo estamos de seguridad? Necesitamos estar seguros de que cumplimos con el GDPR, sobre todo con los datos de pago de los clientes."
+**Antonio**:
+> "Con todo lo que está pasando con hackeos y multas por datos, necesito que me digáis cómo estamos de seguridad. Sobre todo con los datos de pago de los clientes y el GDPR."
 
-**Laura** (Antonio):
-> "Es un punto muy importante. Tenemos Stripe que gestiona los datos de tarjeta, así que los datos PCI nunca tocan nuestros servidores..."
+**Gonzalo**:
+> "Buena pregunta. A nivel de pagos estamos bien porque Stripe gestiona los datos de tarjeta, los datos PCI nunca tocan nuestros servidores. Pero hay un par de cosas que debemos mejorar..."
 
 *(Pausa 5-10 segundos)*
 
@@ -149,11 +149,11 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Disparar SCOPE (exclusión) + COMMERCIAL (upsell data services).
 
-**Carlos** (Gonzalo):
-> "Una última cosa importante. Estamos implementando SAP en las tiendas físicas y necesitamos que el e-commerce se conecte con SAP para tener el inventario sincronizado en tiempo real. No puede ser que un cliente compre online algo que ya se vendió en tienda."
+**Antonio**:
+> "Una última cosa importante. Estamos implementando SAP en las tiendas físicas y necesitamos que el e-commerce se conecte con SAP. El inventario tiene que estar sincronizado en tiempo real. No puede ser que un cliente compre online algo que ya se vendió en tienda."
 
-**Laura** (Antonio):
-> "Entiendo, la sincronización de inventario es clave para omnichannel..."
+**Gonzalo**:
+> "Totalmente, la sincronización de inventario es fundamental para una estrategia omnichannel. Déjame contarte qué opciones tenemos..."
 
 *(Pausa 5-10 segundos)*
 
@@ -172,11 +172,11 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Disparar ALERT por conflicto con decisión histórica documentada.
 
-**Carlos** (Gonzalo):
-> "Ah, y para Black Friday vamos a necesitar mucha más capacidad. El año pasado la web se cayó. Necesitamos mínimo 500 peticiones por segundo."
+**Antonio**:
+> "Ah, y para Black Friday vamos a necesitar mucha más capacidad. El año pasado la web se cayó y perdimos ventas. Necesitamos aguantar mínimo 500 peticiones por segundo."
 
-**Laura** (Antonio):
-> "Sí, Black Friday es el pico del año y tenemos que prepararnos..."
+**Gonzalo**:
+> "Sí, Black Friday es el pico crítico del año. Hay que planificarlo bien porque implica escalar varias capas de la infraestructura..."
 
 *(Pausa 5-10 segundos)*
 
@@ -194,11 +194,11 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 > **Objetivo**: Generar action items y decision tracking.
 
-**Carlos** (Gonzalo):
-> "Entonces, me encargo de priorizar internamente lo de la app móvil y la integración con SAP. Y quedamos en que vosotros revisáis lo de los pagos esta semana, ¿vale?"
+**Antonio**:
+> "Vale, entonces yo me encargo de priorizar internamente lo de la app móvil y la integración con SAP. Y quedamos en que vosotros revisáis lo de los pagos esta semana, ¿correcto?"
 
-**Laura** (Antonio):
-> "Perfecto Carlos. Lo de pagos lo priorizamos esta semana. Y te paso una propuesta para la app móvil y la auditoría de seguridad."
+**Gonzalo**:
+> "Hecho. Lo de pagos lo priorizamos en el sprint de esta semana. Y te preparo una propuesta para la app móvil y la auditoría de seguridad."
 
 *(El sistema debería detectar los action items y commitments del cierre)*
 
@@ -206,8 +206,8 @@ Reunión mensual de seguimiento del proyecto "MiTienda" (plataforma e-commerce).
 
 | Tipo | Agente | Contenido esperado |
 |------|--------|-------------------|
-| 📋 Action Item | Conversation | Carlos: priorizar app móvil y SAP internamente |
-| 📋 Action Item | Conversation | Laura: revisar pagos esta semana + propuesta app y auditoría |
+| 📋 Action Item | Conversation | Antonio: priorizar app móvil y SAP internamente |
+| 📋 Action Item | Conversation | Gonzalo: revisar pagos esta semana + propuesta app y auditoría |
 | 📋 Decision | Conversation | Decisión: priorizar fix de pagos esta semana |
 
 ---

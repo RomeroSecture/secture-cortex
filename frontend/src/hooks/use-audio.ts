@@ -16,9 +16,25 @@ interface UseAudioReturn {
 }
 
 /**
- * Captures raw PCM linear16 audio at 16kHz using AudioContext + ScriptProcessor.
- * This format is directly compatible with Deepgram's WebSocket API.
+ * Captures mic and tab audio as SEPARATE channels.
+ * Each channel is sent independently so the backend can
+ * interleave them as stereo for Deepgram multichannel.
  */
+
+function encodeChunk(float32: Float32Array): string {
+  const int16 = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+  }
+  const bytes = new Uint8Array(int16.buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 export function useAudio({ onAudioChunk }: UseAudioOptions): UseAudioReturn {
   const [isCapturing, setIsCapturing] = useState(false);
   const [hasMic, setHasMic] = useState(false);
@@ -28,92 +44,90 @@ export function useAudio({ onAudioChunk }: UseAudioOptions): UseAudioReturn {
   const micStreamRef = useRef<MediaStream | null>(null);
   const tabStreamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const micProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const tabProcessorRef = useRef<ScriptProcessorNode | null>(null);
 
   const startCapture = useCallback(async () => {
     setError(null);
 
-    // Use default system sample rate (48kHz) — Deepgram handles resampling
-    // Forcing 16kHz breaks tab audio capture (different sample rate domains)
     const audioCtx = new AudioContext();
     audioCtxRef.current = audioCtx;
 
-    // ScriptProcessor to capture raw PCM samples
-    const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-    processorRef.current = processor;
-
-    processor.onaudioprocess = (e) => {
-      const float32 = e.inputBuffer.getChannelData(0);
-      // Convert float32 [-1,1] to int16 PCM (linear16)
-      const int16 = new Int16Array(float32.length);
-      for (let i = 0; i < float32.length; i++) {
-        const s = Math.max(-1, Math.min(1, float32[i]));
-        int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-      }
-      // Encode as base64
-      const bytes = new Uint8Array(int16.buffer);
-      let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const base64 = btoa(binary);
-      onAudioChunk("mic", base64);
+    // Mic processor — channel "mic"
+    const micProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
+    micProcessorRef.current = micProcessor;
+    micProcessor.onaudioprocess = (e) => {
+      onAudioChunk("mic", encodeChunk(e.inputBuffer.getChannelData(0)));
     };
 
-    // Channel 1: Microphone
+    // Microphone
     try {
       const micStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
+        audio: { echoCancellation: true, noiseSuppression: true },
       });
       micStreamRef.current = micStream;
       const micSource = audioCtx.createMediaStreamSource(micStream);
-      micSource.connect(processor);
-      processor.connect(audioCtx.destination);
+      micSource.connect(micProcessor);
+      micProcessor.connect(audioCtx.destination);
       setHasMic(true);
-    } catch (err) {
-      setError("Microphone access denied");
-      console.error("Mic capture failed:", err);
+    } catch {
+      setError("Acceso al micrófono denegado");
       return;
     }
 
-    // Channel 2: Tab/screen audio (optional)
-    // User MUST check "Share tab audio" in the browser dialog
+    // Tab audio — channel "tab"
     try {
       const tabStream = await navigator.mediaDevices.getDisplayMedia({
-        audio: true,
-        video: true, // Required by Chrome to enable audio option
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        },
+        video: true,
       });
-      // Keep video tracks alive (stopping them kills audio in some browsers)
-      // Just disable them so they don't consume resources
+
+      // Minimize video overhead
       tabStream.getVideoTracks().forEach((track) => {
-        track.enabled = false;
+        track.applyConstraints({
+          width: 1,
+          height: 1,
+          frameRate: 1,
+        }).catch(() => {});
       });
 
       const audioTracks = tabStream.getAudioTracks();
-      console.log("Tab audio tracks:", audioTracks.length);
-
       if (audioTracks.length > 0) {
         tabStreamRef.current = tabStream;
+        const tabProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
+        tabProcessorRef.current = tabProcessor;
+        tabProcessor.onaudioprocess = (e) => {
+          onAudioChunk("tab", encodeChunk(e.inputBuffer.getChannelData(0)));
+        };
         const tabSource = audioCtx.createMediaStreamSource(tabStream);
-        tabSource.connect(processor);
+        tabSource.connect(tabProcessor);
+        tabProcessor.connect(audioCtx.destination);
         setHasTab(true);
+      } else {
+        setError(
+          "Sin audio de pestaña. Selecciona una pestaña de Chrome y marca 'Compartir audio'.",
+        );
+        tabStream.getTracks().forEach((t) => t.stop());
       }
     } catch {
-      console.warn("Tab audio not available — mic only");
+      // Tab audio optional — mic only mode
     }
 
     setIsCapturing(true);
   }, [onAudioChunk]);
 
   const stopCapture = useCallback(() => {
-    processorRef.current?.disconnect();
+    micProcessorRef.current?.disconnect();
+    tabProcessorRef.current?.disconnect();
     audioCtxRef.current?.close();
     micStreamRef.current?.getTracks().forEach((t) => t.stop());
     tabStreamRef.current?.getTracks().forEach((t) => t.stop());
-    processorRef.current = null;
+    micProcessorRef.current = null;
+    tabProcessorRef.current = null;
     audioCtxRef.current = null;
     micStreamRef.current = null;
     tabStreamRef.current = null;

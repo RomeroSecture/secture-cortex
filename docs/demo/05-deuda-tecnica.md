@@ -2,7 +2,7 @@
 
 **Proyecto**: MiTienda E-Commerce — RetailMax S.L.
 **Última actualización**: Marzo 2026
-**Responsable**: Laura García, Tech Lead — Secture
+**Responsable**: Gonzalo López, Tech Lead — Secture
 
 ---
 

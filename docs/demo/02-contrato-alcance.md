@@ -52,7 +52,7 @@ Entregables planificados (pendiente contratación formal):
 - **Multi-idioma** (español, catalán, inglés)
 
 **Presupuesto estimado**: Por definir. Requiere nuevo contrato.
-**Estado**: En negociación. Pedro Ruiz (Secture) preparando propuesta comercial.
+**Estado**: En negociación. Pedro García (Secture) preparando propuesta comercial.
 
 ---
 
