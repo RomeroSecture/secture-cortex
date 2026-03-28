@@ -143,8 +143,13 @@ class SingleChannelSession:
         await self._connect()
 
     def send_audio_base64(self, audio_b64: str) -> None:
-        """Decode base64 and send to Deepgram."""
-        if not self._ws or self._stopped:
+        """Decode base64 and send to Deepgram. Auto-reconnects if dead."""
+        if self._stopped:
+            return
+        if not self._ws:
+            # Connection died — try to reconnect
+            self._retries = 0
+            asyncio.get_running_loop().create_task(self._connect())
             return
         try:
             audio_bytes = base64.b64decode(audio_b64)
@@ -152,7 +157,8 @@ class SingleChannelSession:
                 self._ws.send(audio_bytes),
             )
         except Exception:
-            pass
+            # Send failed — connection probably dead, reconnect next time
+            self._ws = None
 
     async def stop(self) -> None:
         self._stopped = True

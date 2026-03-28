@@ -44,11 +44,15 @@ export default function MeetingDashboard({
   const insightCounter = useRef(0);
   const eventCounter = useRef(0);
 
-  const token = typeof window !== "undefined" ? getToken() : null;
-  const searchParams = typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search)
-    : null;
-  const projectId = searchParams?.get("project_id") || "";
+  const [token, setToken] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState("");
+
+  // Read client-side params after hydration
+  useEffect(() => {
+    setToken(getToken());
+    const params = new URLSearchParams(window.location.search);
+    setProjectId(params.get("project_id") || "");
+  }, []);
 
   // Fetch actual meeting status on mount (fixes ended meetings showing as recording)
   useEffect(() => {

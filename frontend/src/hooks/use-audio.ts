@@ -50,8 +50,15 @@ export function useAudio({ onAudioChunk }: UseAudioOptions): UseAudioReturn {
   const startCapture = useCallback(async () => {
     setError(null);
 
-    const audioCtx = new AudioContext();
-    audioCtxRef.current = audioCtx;
+    // Reuse existing AudioContext or create new
+    let audioCtx = audioCtxRef.current;
+    if (!audioCtx || audioCtx.state === "closed") {
+      audioCtx = new AudioContext();
+      audioCtxRef.current = audioCtx;
+    }
+    if (audioCtx.state === "suspended") {
+      await audioCtx.resume();
+    }
 
     // Mic processor — channel "mic"
     const micProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
@@ -60,61 +67,72 @@ export function useAudio({ onAudioChunk }: UseAudioOptions): UseAudioReturn {
       onAudioChunk("mic", encodeChunk(e.inputBuffer.getChannelData(0)));
     };
 
-    // Microphone
-    try {
-      const micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
-      micStreamRef.current = micStream;
-      const micSource = audioCtx.createMediaStreamSource(micStream);
-      micSource.connect(micProcessor);
-      micProcessor.connect(audioCtx.destination);
-      setHasMic(true);
-    } catch {
-      setError("Acceso al micrófono denegado");
-      return;
-    }
-
-    // Tab audio — channel "tab"
-    try {
-      const tabStream = await navigator.mediaDevices.getDisplayMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-        video: true,
-      });
-
-      // Minimize video overhead
-      tabStream.getVideoTracks().forEach((track) => {
-        track.applyConstraints({
-          width: 1,
-          height: 1,
-          frameRate: 1,
-        }).catch(() => {});
-      });
-
-      const audioTracks = tabStream.getAudioTracks();
-      if (audioTracks.length > 0) {
-        tabStreamRef.current = tabStream;
-        const tabProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
-        tabProcessorRef.current = tabProcessor;
-        tabProcessor.onaudioprocess = (e) => {
-          onAudioChunk("tab", encodeChunk(e.inputBuffer.getChannelData(0)));
-        };
-        const tabSource = audioCtx.createMediaStreamSource(tabStream);
-        tabSource.connect(tabProcessor);
-        tabProcessor.connect(audioCtx.destination);
-        setHasTab(true);
-      } else {
-        setError(
-          "Sin audio de pestaña. Selecciona una pestaña de Chrome y marca 'Compartir audio'.",
-        );
-        tabStream.getTracks().forEach((t) => t.stop());
+    // Reuse existing mic stream or request new
+    let micStream = micStreamRef.current;
+    if (!micStream || micStream.getTracks().every((t) => t.readyState === "ended")) {
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        micStreamRef.current = micStream;
+      } catch {
+        setError("Acceso al micrófono denegado");
+        return;
       }
-    } catch {
-      // Tab audio optional — mic only mode
+    }
+    const micSource = audioCtx.createMediaStreamSource(micStream);
+    micSource.connect(micProcessor);
+    micProcessor.connect(audioCtx.destination);
+    setHasMic(true);
+
+    // Tab audio — reuse existing or request new
+    let tabStream = tabStreamRef.current;
+    const tabAlive = tabStream && tabStream.getAudioTracks().some((t) => t.readyState === "live");
+
+    if (tabAlive && tabStream) {
+      // Reuse existing tab stream
+      const tabProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
+      tabProcessorRef.current = tabProcessor;
+      tabProcessor.onaudioprocess = (e) => {
+        onAudioChunk("tab", encodeChunk(e.inputBuffer.getChannelData(0)));
+      };
+      const tabSource = audioCtx.createMediaStreamSource(tabStream);
+      tabSource.connect(tabProcessor);
+      tabProcessor.connect(audioCtx.destination);
+      setHasTab(true);
+    } else if (!tabStream) {
+      // First time — request tab share
+      try {
+        tabStream = await navigator.mediaDevices.getDisplayMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          },
+          video: true,
+        });
+        tabStream.getVideoTracks().forEach((track) => {
+          track.applyConstraints({ width: 1, height: 1, frameRate: 1 }).catch(() => {});
+        });
+        const audioTracks = tabStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          tabStreamRef.current = tabStream;
+          const tabProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
+          tabProcessorRef.current = tabProcessor;
+          tabProcessor.onaudioprocess = (e) => {
+            onAudioChunk("tab", encodeChunk(e.inputBuffer.getChannelData(0)));
+          };
+          const tabSource = audioCtx.createMediaStreamSource(tabStream);
+          tabSource.connect(tabProcessor);
+          tabProcessor.connect(audioCtx.destination);
+          setHasTab(true);
+        } else {
+          setError("Sin audio de pestaña. Marca 'Compartir audio' en Chrome.");
+          tabStream.getTracks().forEach((t) => t.stop());
+        }
+      } catch {
+        // Tab optional — mic only
+      }
     }
 
     setIsCapturing(true);
@@ -123,17 +141,11 @@ export function useAudio({ onAudioChunk }: UseAudioOptions): UseAudioReturn {
   const stopCapture = useCallback(() => {
     micProcessorRef.current?.disconnect();
     tabProcessorRef.current?.disconnect();
-    audioCtxRef.current?.close();
-    micStreamRef.current?.getTracks().forEach((t) => t.stop());
-    tabStreamRef.current?.getTracks().forEach((t) => t.stop());
     micProcessorRef.current = null;
     tabProcessorRef.current = null;
-    audioCtxRef.current = null;
-    micStreamRef.current = null;
-    tabStreamRef.current = null;
+    // Suspend AudioContext — pauses audio pipeline, mutes mic indicator
+    audioCtxRef.current?.suspend();
     setIsCapturing(false);
-    setHasMic(false);
-    setHasTab(false);
   }, []);
 
   return { isCapturing, hasMic, hasTab, startCapture, stopCapture, error };
