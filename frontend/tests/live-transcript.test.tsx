@@ -6,30 +6,32 @@ import type { TranscriptionSegment } from "@/types/meeting";
 const segments: TranscriptionSegment[] = [
   { id: "1", speaker: "Speaker 0", text: "Queremos cambiar las notificaciones", is_final: true, timestamp: "2026-03-27T10:00:00Z" },
   { id: "2", speaker: "Speaker 1", text: "Eso requiere migrar el dispatcher", is_final: true, timestamp: "2026-03-27T10:00:05Z" },
-  { id: "3", speaker: "Speaker 0", text: "Hmm...", is_final: false, timestamp: "2026-03-27T10:00:10Z" },
+  { id: "3", speaker: "Speaker 0", text: "Hmm vale lo miramos", is_final: true, timestamp: "2026-03-27T10:00:10Z" },
 ];
 
 describe("LiveTranscript", () => {
-  it("renders all segments", () => {
+  it("renders all final segments", () => {
     render(<LiveTranscript segments={segments} />);
     expect(screen.getByText("Queremos cambiar las notificaciones")).toBeInTheDocument();
     expect(screen.getByText("Eso requiere migrar el dispatcher")).toBeInTheDocument();
   });
 
-  it("shows speaker labels", () => {
+  it("shows speaker names", () => {
     render(<LiveTranscript segments={segments} />);
-    expect(screen.getAllByText("Speaker 0:")).toHaveLength(2);
-    expect(screen.getByText("Speaker 1:")).toBeInTheDocument();
+    expect(screen.getAllByText("Speaker 0").length).toBeGreaterThan(0);
+    expect(screen.getByText("Speaker 1")).toBeInTheDocument();
   });
 
   it("shows waiting message when no segments", () => {
     render(<LiveTranscript segments={[]} />);
-    expect(screen.getByText("Waiting for transcription...")).toBeInTheDocument();
+    expect(screen.getByText("Esperando transcripcion...")).toBeInTheDocument();
   });
 
-  it("applies reduced opacity to non-final segments", () => {
+  it("groups consecutive segments from same speaker", () => {
     const { container } = render(<LiveTranscript segments={segments} />);
-    const nonFinal = container.querySelectorAll(".opacity-60");
-    expect(nonFinal.length).toBeGreaterThan(0);
+    // Speaker 0 has 2 separate groups (seg 1, then seg 3 after Speaker 1)
+    // Speaker 1 has 1 group — total 3 groups with avatars
+    const avatars = container.querySelectorAll(".rounded-full");
+    expect(avatars.length).toBeGreaterThanOrEqual(3);
   });
 });

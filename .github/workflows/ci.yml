@@ -45,12 +45,14 @@ jobs:
         working-directory: backend
         env:
           DATABASE_URL: postgresql+asyncpg://cortex:cortex_dev@localhost:5432/cortex
+          JWT_SECRET: ci-test-secret-not-for-production
         run: alembic upgrade head
 
       - name: Run pytest
         working-directory: backend
         env:
           DATABASE_URL: postgresql+asyncpg://cortex:cortex_dev@localhost:5432/cortex
+          JWT_SECRET: ci-test-secret-not-for-production
         run: python -m pytest tests/ -v
 
   frontend:

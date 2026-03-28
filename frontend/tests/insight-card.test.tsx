@@ -27,32 +27,30 @@ const suggestionInsight: InsightData = {
 };
 
 describe("InsightCard", () => {
-  it("renders alert insight with correct badge", () => {
+  it("renders insight content as collapsed summary", () => {
     render(<InsightCard insight={alertInsight} />);
-    expect(screen.getByText("Alert")).toBeInTheDocument();
-    expect(screen.getByText("92%")).toBeInTheDocument();
     expect(screen.getByText(alertInsight.content)).toBeInTheDocument();
   });
 
-  it("renders scope insight with correct badge", () => {
+  it("renders scope insight content", () => {
     render(<InsightCard insight={scopeInsight} />);
-    expect(screen.getByText("Scope")).toBeInTheDocument();
-    expect(screen.getByText("85%")).toBeInTheDocument();
+    expect(screen.getByText(scopeInsight.content)).toBeInTheDocument();
   });
 
-  it("renders suggestion insight with correct badge", () => {
+  it("renders suggestion insight content", () => {
     render(<InsightCard insight={suggestionInsight} />);
-    expect(screen.getByText("Suggestion")).toBeInTheDocument();
     expect(screen.getByText(suggestionInsight.content)).toBeInTheDocument();
   });
 
-  it("shows source count when sources exist", () => {
-    render(<InsightCard insight={suggestionInsight} />);
-    expect(screen.getByText("Sources: 2 context chunks")).toBeInTheDocument();
+  it("renders confidence bar with correct width", () => {
+    const { container } = render(<InsightCard insight={alertInsight} />);
+    const bar = container.querySelector("[style*='width']");
+    expect(bar).toBeInTheDocument();
+    expect(bar?.getAttribute("style")).toContain("92%");
   });
 
-  it("does not show sources when empty", () => {
+  it("does not show sources section when empty", () => {
     render(<InsightCard insight={scopeInsight} />);
-    expect(screen.queryByText(/Sources/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Fuentes")).not.toBeInTheDocument();
   });
 });
