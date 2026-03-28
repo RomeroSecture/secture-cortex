@@ -9,6 +9,8 @@ import { InsightCard } from "@/components/insights/insight-card";
 import { MeetingOutputsPanel } from "@/components/insights/meeting-outputs";
 import type { MeetingFull, InsightItem, TranscriptionSegment } from "@/types/project";
 
+type DetailTab = "transcription" | "insights" | "outputs";
+
 const SPEAKER_COLORS: Record<string, string> = {
   "Speaker 0": "text-foreground",
   "Speaker 1": "text-cortex-suggestion",
@@ -60,6 +62,7 @@ export default function MeetingDetailPage({
   const [insights, setInsights] = useState<InsightItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<DetailTab>("outputs");
 
   const token = getToken();
 
@@ -166,13 +169,46 @@ export default function MeetingDetailPage({
         <p className="mb-4 text-sm text-destructive">{error}</p>
       )}
 
-      <div className="h-px bg-border" />
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-border">
+        {(
+          [
+            { key: "outputs" as DetailTab, label: "Acta y Resultados", show: meeting.status === "ended" },
+            { key: "transcription" as DetailTab, label: `Transcripcion (${meeting.transcription.length})` },
+            { key: "insights" as DetailTab, label: `Insights (${insights.length})` },
+          ] as Array<{ key: DetailTab; label: string; show?: boolean }>
+        )
+          .filter((t) => t.show !== false)
+          .map((tab) => (
+            <button
+              key={tab.key}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "border-b-2 border-primary text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+      </div>
 
-      {/* Two-column layout: transcription (2/3) + insights (1/3) */}
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Transcription */}
-        <div className="lg:col-span-2">
-          <h2 className="mb-3 text-base font-semibold text-foreground">Transcripcion</h2>
+      {/* Tab content */}
+      <div className="mt-6">
+        {/* Outputs tab */}
+        {activeTab === "outputs" && meeting.status === "ended" && token && (
+          <div className="rounded-xl border border-border bg-card">
+            <MeetingOutputsPanel
+              projectId={id}
+              meetingId={meetingId}
+              token={token}
+            />
+          </div>
+        )}
+
+        {/* Transcription tab */}
+        {activeTab === "transcription" && (
           <div className="rounded-xl border border-border bg-card">
             <div className="max-h-[600px] overflow-y-auto p-4">
               {meeting.transcription.length === 0 ? (
@@ -202,59 +238,40 @@ export default function MeetingDetailPage({
               )}
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Insights */}
-        <div>
-          <h2 className="mb-3 text-base font-semibold text-foreground">
-            Insights ({insights.length})
-          </h2>
-          {insights.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Sin insights generados para esta reunion.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {insights.map((insight) => (
-                <InsightCard
-                  key={insight.id}
-                  insight={{
-                    id: insight.id,
-                    type: insight.type,
-                    content: insight.content,
-                    confidence: insight.confidence,
-                    sources: insight.sources,
-                    agent_source: insight.agent_source,
-                    subtype: insight.insight_subtype,
-                  }}
-                  onFeedback={handleFeedback}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Insights tab */}
+        {activeTab === "insights" && (
+          <>
+            {insights.length === 0 ? (
+              <div className="rounded-xl border border-border bg-card p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Sin insights generados para esta reunion.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {insights.map((insight) => (
+                  <InsightCard
+                    key={insight.id}
+                    defaultExpanded
+                    insight={{
+                      id: insight.id,
+                      type: insight.type,
+                      content: insight.content,
+                      confidence: insight.confidence,
+                      sources: insight.sources,
+                      agent_source: insight.agent_source,
+                      subtype: insight.insight_subtype,
+                    }}
+                    onFeedback={handleFeedback}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
-
-      {/* Post-meeting outputs section */}
-      {meeting.status === "ended" && token && (
-        <>
-          <div className="mt-8 h-px bg-border" />
-          <div className="mt-6">
-            <h2 className="mb-3 text-base font-semibold text-foreground">
-              Outputs Post-Reunion
-            </h2>
-            <div className="rounded-xl border border-border bg-card">
-              <MeetingOutputsPanel
-                projectId={id}
-                meetingId={meetingId}
-                token={token}
-              />
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

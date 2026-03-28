@@ -108,7 +108,7 @@ export function MeetingHeader({ title, status, startedAt, isWsConnected, onRenam
         {status === "recording" ? (
           <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-0.5">
             <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse-recording" />
-            <span className="text-[10px] font-medium text-destructive">REC</span>
+            <span className="text-[10px] font-medium text-destructive">Reunion activa</span>
           </span>
         ) : (
           <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">

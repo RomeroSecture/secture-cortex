@@ -23,10 +23,10 @@ const STATUS_STYLES: Record<ContextFile["status"], { label: string; className: s
 };
 
 const MEMBER_ROLE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  tech_lead: "Tech Lead",
+  admin: "Administrador",
+  tech_lead: "Líder Técnico",
   developer: "Desarrollador",
-  pm: "PM",
+  pm: "Gerente de Proyecto",
   commercial: "Comercial",
 };
 
@@ -99,23 +99,28 @@ export default function ProjectDetailPage({
   }, [loadData]);
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !token) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0 || !token) return;
 
     setUploading(true);
+    setError(null);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      for (const file of Array.from(fileList)) {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const res = await fetch(apiUrl(`/api/v1/projects/${id}/context-files`), {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+        const res = await fetch(apiUrl(`/api/v1/projects/${id}/context-files`), {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error?.message || body?.detail || `HTTP ${res.status}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(
+            `${file.name}: ${body?.error?.message || body?.detail || `HTTP ${res.status}`}`,
+          );
+        }
       }
 
       const filesRes = await apiFetch<{ data: ContextFile[] }>(
@@ -124,7 +129,7 @@ export default function ProjectDetailPage({
       );
       setFiles(filesRes.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al subir archivo");
+      setError(err instanceof Error ? err.message : "Error al subir archivos");
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -371,12 +376,13 @@ export default function ProjectDetailPage({
               <div className="relative">
                 <Input
                   type="file"
+                  multiple
                   className="absolute inset-0 cursor-pointer opacity-0"
                   onChange={handleFileUpload}
                   disabled={uploading}
                 />
                 <Button variant="outline" size="sm" className="border-border" disabled={uploading}>
-                  {uploading ? "Subiendo..." : "Subir archivo"}
+                  {uploading ? "Subiendo..." : "Subir archivos"}
                 </Button>
               </div>
             </div>
@@ -510,10 +516,10 @@ export default function ProjectDetailPage({
                 onChange={(e) => setNewMemberRole(e.target.value)}
                 className="h-9 w-full rounded-md border border-border bg-transparent px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="admin">Admin</option>
-                <option value="tech_lead">Tech Lead</option>
+                <option value="admin">Administrador</option>
+                <option value="tech_lead">Líder Técnico</option>
                 <option value="developer">Desarrollador</option>
-                <option value="pm">PM</option>
+                <option value="pm">Gerente de Proyecto</option>
                 <option value="commercial">Comercial</option>
               </select>
             </div>

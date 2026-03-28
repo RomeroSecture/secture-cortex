@@ -162,7 +162,7 @@ export default function ProjectAnalyticsPage({
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="text-center">
             <p className="text-2xl font-semibold text-foreground">{data.kb_report.total_chunks}</p>
-            <p className="text-xs text-muted-foreground">Chunks Total</p>
+            <p className="text-xs text-muted-foreground">Fragmentos totales</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-semibold text-foreground">{data.kb_report.file_chunks}</p>
@@ -174,7 +174,7 @@ export default function ProjectAnalyticsPage({
           </div>
           <div className="text-center">
             <p className="text-2xl font-semibold text-foreground">{data.kb_report.coverage_ratio}</p>
-            <p className="text-xs text-muted-foreground">Ratio Cobertura</p>
+            <p className="text-xs text-muted-foreground">Cobertura</p>
           </div>
         </div>
       </div>

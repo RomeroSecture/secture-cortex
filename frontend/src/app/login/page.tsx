@@ -99,7 +99,7 @@ export default function LoginPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Login
+              Iniciar sesión
             </button>
             <button
               type="button"
@@ -146,7 +146,7 @@ export default function LoginPage() {
               </Field>
 
               <Field>
-                <FieldLabel>Password</FieldLabel>
+                <FieldLabel>Contraseña</FieldLabel>
                 <Input
                   type="password"
                   placeholder="********"

@@ -147,16 +147,23 @@ export default function MeetingHistoryPage({
                     {formatDuration(meeting.started_at, meeting.ended_at)}
                   </p>
                 </div>
-                {meeting.status === "recording" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
-                    <span className="h-1.5 w-1.5 animate-pulse-recording rounded-full bg-destructive" />
-                    En curso
-                  </span>
-                ) : (
-                  <span className="rounded-md bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-                    Finalizada
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {meeting.status === "ended" && (
+                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      Acta + Resultados
+                    </span>
+                  )}
+                  {meeting.status === "recording" ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-md bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">
+                      <span className="h-1.5 w-1.5 animate-pulse-recording rounded-full bg-destructive" />
+                      En curso
+                    </span>
+                  ) : (
+                    <span className="rounded-md bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                      Finalizada
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           ))}

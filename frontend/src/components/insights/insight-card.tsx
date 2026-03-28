@@ -43,16 +43,17 @@ const TYPE_CONFIG = {
 
 interface InsightCardProps {
   insight: InsightData;
+  defaultExpanded?: boolean;
   onFeedback?: (insightId: string, rating: "useful" | "not_useful" | "dismissed") => void;
 }
 
 const AGENT_LABELS: Record<string, string> = {
-  tech_lead: "Tech Lead",
+  tech_lead: "Líder Técnico",
   pm: "PM",
   commercial: "Comercial",
-  dev: "Dev",
+  dev: "Desarrollo",
   supervisor: "Supervisor",
-  conversation: "Intel",
+  conversation: "Inteligencia",
 };
 
 function truncate(text: string, max: number): string {
@@ -60,8 +61,8 @@ function truncate(text: string, max: number): string {
   return text.slice(0, max).trimEnd() + "...";
 }
 
-export function InsightCard({ insight, onFeedback }: InsightCardProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function InsightCard({ insight, defaultExpanded, onFeedback }: InsightCardProps) {
+  const [isOpen, setIsOpen] = useState(defaultExpanded ?? false);
   const config = TYPE_CONFIG[insight.type];
   const collapsedText = insight.summary
     ? truncate(insight.summary, 80)

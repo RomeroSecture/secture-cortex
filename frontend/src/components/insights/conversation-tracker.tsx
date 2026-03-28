@@ -46,7 +46,7 @@ export function ConversationTracker({ events }: ConversationTrackerProps) {
     return (
       <div className="flex flex-1 items-center justify-center px-4">
         <p className="text-center text-xs text-muted-foreground">
-          Las decisiones, action items y preguntas apareceran aqui
+          Las decisiones, tareas y preguntas aparecerán aquí
         </p>
       </div>
     );

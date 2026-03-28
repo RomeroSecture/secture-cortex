@@ -25,9 +25,9 @@ export function MeetingKPIsBar({ kpis }: MeetingKPIsProps) {
     <div className="flex items-center gap-2 overflow-x-auto px-3 py-1.5">
       <KpiCard label="Insights" value={kpis.total_insights} color="text-primary" />
       <KpiCard label="Decisiones" value={kpis.total_decisions} color="text-cortex-alert" />
-      <KpiCard label="Action Items" value={kpis.total_action_items} color="text-cortex-scope" />
+      <KpiCard label="Tareas" value={kpis.total_action_items} color="text-cortex-scope" />
       <KpiCard label="Preguntas" value={kpis.total_questions_pending} color="text-cortex-suggestion" />
-      <KpiCard label="Speakers" value={speakers} />
+      <KpiCard label="Participantes" value={speakers} />
       {topSpeaker && (
         <div className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
           <span>Más activo:</span>

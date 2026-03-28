@@ -11,10 +11,10 @@ import type { UserProfile, UserRole } from "@/types/project";
 const ROLES: UserRole[] = ["admin", "tech_lead", "developer", "pm", "commercial"];
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "Admin",
-  tech_lead: "Tech Lead",
+  admin: "Administrador",
+  tech_lead: "Líder Técnico",
   developer: "Desarrollador",
-  pm: "Product Manager",
+  pm: "Gerente de Proyecto",
   commercial: "Comercial",
 };
 

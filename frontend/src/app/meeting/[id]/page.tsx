@@ -30,7 +30,7 @@ export default function MeetingDashboard({
   const [previewText, setPreviewText] = useState("");
   const [insights, setInsights] = useState<InsightData[]>([]);
   const [meetingStatus, setMeetingStatus] = useState<"recording" | "ended">("recording");
-  const [meetingTitle, setMeetingTitle] = useState("Untitled Meeting");
+  const [meetingTitle, setMeetingTitle] = useState("Reunión sin título");
   const [activeTab, setActiveTab] = useState<"insights" | "intelligence">("insights");
   const [trackedEvents, setTrackedEvents] = useState<Array<{
     id: string; type: string; summary: string; detail: string; timestamp: string;
@@ -49,6 +49,18 @@ export default function MeetingDashboard({
     ? new URLSearchParams(window.location.search)
     : null;
   const projectId = searchParams?.get("project_id") || "";
+
+  // Fetch actual meeting status on mount (fixes ended meetings showing as recording)
+  useEffect(() => {
+    if (!token || !projectId) return;
+    apiFetch<{ data: { status: string; title: string } }>(
+      `/api/v1/projects/${projectId}/meetings/${meetingId}`,
+      { token },
+    ).then((res) => {
+      if (res.data.status === "ended") setMeetingStatus("ended");
+      if (res.data.title) setMeetingTitle(res.data.title);
+    }).catch(() => {});
+  }, [token, projectId, meetingId]);
 
   const handleWsMessage = useCallback((msg: WsMessage) => {
     if (msg.type === "transcription") {
@@ -211,13 +223,14 @@ export default function MeetingDashboard({
     [token, projectId, meetingId]
   );
 
-  // Auto-redirect after meeting ends
+  // Auto-redirect to meeting detail (where outputs are shown)
   useEffect(() => {
     if (meetingStatus === "ended" && projectId) {
-      const timer = setTimeout(() => router.push(`/projects/${projectId}`), 4000);
+      const dest = `/projects/${projectId}/meetings/${meetingId}`;
+      const timer = setTimeout(() => router.push(dest), 5000);
       return () => clearTimeout(timer);
     }
-  }, [meetingStatus, projectId, router]);
+  }, [meetingStatus, projectId, meetingId, router]);
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -237,10 +250,10 @@ export default function MeetingDashboard({
           <div className="animate-fade-in-up text-center">
             <h2 className="text-lg font-medium text-foreground">Reunion finalizada</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Guardando transcripcion e insights...
+              Generando acta, email, briefing y mas...
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Redirigiendo en unos segundos
+              Redirigiendo al resumen de la reunion
             </p>
           </div>
         </div>

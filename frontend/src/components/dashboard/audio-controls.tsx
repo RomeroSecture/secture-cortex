@@ -30,7 +30,7 @@ export function AudioControls({
           className="h-8 gap-2 rounded-full bg-muted text-foreground hover:bg-muted/80 px-4 text-xs"
         >
           <Mic className="h-3.5 w-3.5" />
-          Iniciar
+          Capturar audio
         </Button>
       ) : (
         <Button
@@ -39,7 +39,7 @@ export function AudioControls({
           className="h-8 gap-2 rounded-full bg-destructive/15 text-destructive hover:bg-destructive/25 px-4 text-xs animate-pulse-recording"
         >
           <Square className="h-3 w-3" />
-          Detener
+          Parar captura
         </Button>
       )}
 
@@ -48,13 +48,13 @@ export function AudioControls({
         {hasMic && (
           <span className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span className="text-[10px] text-muted-foreground">Mic</span>
+            <span className="text-[10px] text-muted-foreground">Micro</span>
           </span>
         )}
         {hasTab && (
           <span className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-            <span className="text-[10px] text-muted-foreground">Tab</span>
+            <span className="text-[10px] text-muted-foreground">Pestaña</span>
           </span>
         )}
         {!isCapturing && !error && (
